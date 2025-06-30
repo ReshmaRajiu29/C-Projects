@@ -1,0 +1,141 @@
+#include <stdio.h>
+#include <unistd.h> // for sleep()
+
+#define VOTERS 5
+#define CANDIDATES 5
+
+typedef struct {
+    char name[20];
+    int aadhar;
+    char votedsymbol;
+} voters;
+
+typedef struct {
+    char name[20];
+    int aadhar;
+    char symbol;
+} candidates;
+
+candidates c[CANDIDATES] = {
+    {.name = "Resh", .aadhar = 12345, .symbol = '@'},
+    {.name = "Mano", .aadhar = 12346, .symbol = '#'},
+    {.name = "Jenny", .aadhar = 12347, .symbol = '$'},
+    {.name = "Umapa", .aadhar = 12348, .symbol = '~'},
+    {.name = "Shansan", .aadhar = 12349, .symbol = '`'}
+};
+
+voters v[VOTERS];
+
+int checkidentity(int aadharno, int n) {
+    for (int i = 0; i < n; i++) {
+        if (aadharno == v[i].aadhar)
+            return 0;
+    }
+    return 1;
+}
+
+int main() {
+    printf("ONLINE VOTING SYSTEM\n");
+    printf("Candidates and their symbols\n");
+
+    FILE *f1 = fopen("CandidateDetails.txt", "w");
+    if (f1 == NULL) {
+        printf("Unable to open file!\n");
+        return 1;
+    }
+
+    for (int i = 0; i < CANDIDATES; i++) {
+        printf("%s\t%c\n", c[i].name, c[i].symbol);
+        fprintf(f1, "Name: %s\tSymbol: %c\n", c[i].name, c[i].symbol);
+    }
+    fclose(f1);
+
+    FILE *f2 = fopen("VotersDetails.txt", "w");
+    if (f2 == NULL) {
+        printf("Unable to open file!\n");
+        return 1;
+    }
+
+    for (int i = 0; i < VOTERS; i++) {
+        printf("\nEnter your details (Voter %d)\n", i + 1);
+        printf("Enter your name: ");
+        scanf("%s", v[i].name);
+        printf("Enter your Aadhar no.: ");
+        scanf("%d", &v[i].aadhar);
+
+        if (checkidentity(v[i].aadhar, i)) {
+            printf("Enter the symbol you want to vote for: ");
+            scanf(" %c", &v[i].votedsymbol);
+        } else {
+            printf("\nYou have duplicate identity!!");
+            printf("\nYou can't vote!!\n");
+            i--;
+            continue;
+        }
+
+        fprintf(f2, "Name: %s\tAadhar no.: %d\tSymbol: %c\n", v[i].name, v[i].aadhar, v[i].votedsymbol);
+    }
+    fclose(f2);
+
+    int votecount[CANDIDATES] = {0};
+
+    for (int i = 0; i < VOTERS; i++) {
+        if (v[i].votedsymbol == '@')
+            votecount[0]++;
+        else if (v[i].votedsymbol == '#')
+            votecount[1]++;
+        else if (v[i].votedsymbol == '$')
+            votecount[2]++;
+        else if (v[i].votedsymbol == '~')
+            votecount[3]++;
+        else if (v[i].votedsymbol == '`')
+            votecount[4]++;
+    }
+
+    FILE *f3 = fopen("VotingDetails.txt", "w");
+    if (f3 == NULL) {
+        printf("Unable to open file!\n");
+        return 1;
+    }
+
+    printf("\n--- Voting Results ---\n");
+    for (int i = 0; i < CANDIDATES; i++) {
+        printf("Candidate %d: %s\n", i + 1, c[i].name);
+        printf("No. of votes: %d\n\n", votecount[i]);
+        fprintf(f3, "Name: %s\tNo. of votes: %d\n", c[i].name, votecount[i]);
+    }
+
+    fclose(f3);
+    sleep(2);
+
+    int winner = votecount[0], win = 0;
+    for (int i = 1; i < CANDIDATES; i++) {
+        if (votecount[i] > winner) {
+            winner = votecount[i];
+            win = i;
+        }
+    }
+
+    // Tie check (optional)
+   int tie = 0;
+   for (int i = 0; i < CANDIDATES; i++) {
+    if (i != win && votecount[i] == winner) {
+        tie = 1;
+        break;
+    }
+    }
+
+    if (tie) {
+    printf("\nIt's a tie between candidates with %d votes:\n", winner);
+    for (int i = 0; i < CANDIDATES; i++) {
+        if (votecount[i] == winner) {
+            printf(" - %s\n", c[i].name);
+        }
+    }
+    } else {
+    printf("\nThe Winner is %s, who won with %d votes!\n", c[win].name, winner);
+}
+
+
+    return 0;
+}
